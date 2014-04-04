@@ -1,0 +1,21 @@
+
+{
+    "name": "jquery-mobile-datebox",
+    "version": "1.1.0-kanso.1",
+    "categories": ["utils"],
+    "maintainers": [
+        {
+            "name": "Michael Marino",
+            "url": "https://github.com/mgmarino"
+        }
+    ],
+    "url": "http://dev.jtsage.com/jQM-DateBox/",
+    "modules": "jquery-mobile-datebox.js",
+    "modules_attachment": false,
+    "dependencies": {
+        "modules": ">=0.0.8",
+        "jquery": ">=1.9.1-kanso.2",
+        "jquery-mobile": ">=1.4.2-kanso.1"
+    },
+    "description": "A Date and Time Picker plugin for jQueryMobile 1.2.0+.  This provides version 1.1.0."
+}
