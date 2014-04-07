@@ -10,7 +10,7 @@ import sys
 import re
 
 base_url = "http://dev.jtsage.com/cdn/datebox"
-version = "1.1.0"
+version = "1.4.0"
 module_name = "jquery-mobile-datebox"
 json_file = """
 {
