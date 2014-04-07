@@ -31,7 +31,7 @@ json_file = """
         "jquery": ">=1.9.1-kanso.2",
         "jquery-mobile": ">=1.4.2-kanso.1"
     },
-    "description": "A Date and Time Picker plugin for jQueryMobile 1.2.0+."
+    "description": "A Date and Time Picker plugin for jQueryMobile 1.2.0+.  This provides version %(VERSION)s."
 }
 """ % { 
         "NAME" : module_name, "VERSION" : version,
