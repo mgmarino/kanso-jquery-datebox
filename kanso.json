@@ -1,7 +1,7 @@
 
 {
     "name": "jquery-mobile-datebox",
-    "version": "1.4.0-kanso.1",
+    "version": "1.4.0-kanso.2",
     "categories": ["utils"],
     "maintainers": [
         {
@@ -12,8 +12,10 @@
     "url": "http://dev.jtsage.com/jQM-DateBox/",
     "modules": "jquery-mobile-datebox.js",
     "modules_attachment": false,
+    "attachments" : ["css"],
     "dependencies": {
         "modules": ">=0.0.8",
+        "attachments": null,
         "jquery": ">=1.9.1-kanso.2",
         "jquery-mobile": ">=1.4.2-kanso.1"
     },
