@@ -10,7 +10,7 @@
 	$.widget( "mobile.datebox", $.mobile.widget, {
 		options: {
 			// All widget options, including some internal runtime details
-			version: '2-1.4.0-2013070300', // jQMMajor.jQMMinor.DBoxMinor-YrMoDaySerial
+			version: '2-1.4.3-2014080200', // jQMMajor.jQMMinor.DBoxMinor-YrMoDaySerial
 			mobVer: parseInt($.mobile.version.replace(/\./g,'')),
 			theme: false,
 			themeDefault: 'a',
@@ -27,7 +27,7 @@
 			lockInput: true,
 			enhanceInput: true,
 			
-			zindex: '500',
+			zindex: '1100',
 			clickEvent: 'vclick',
 			clickEventAlt: 'click',
 			resizeListener: true,
@@ -76,6 +76,7 @@
 			blackDates: false,
 			blackDatesRec: false,
 			blackDays: false,
+			whiteDates: true,
 			minHour: false,
 			maxHour: false,
 			minuteStep: 1,
@@ -90,6 +91,7 @@
 					setTimeButtonLabel: 'Set Time',
 					setDurationButtonLabel: 'Set Duration',
 					calTodayButtonLabel: 'Jump to Today',
+					calTomorrowButtonLabel: 'Jump to Tomorrow',
 					titleDateDialogLabel: 'Set Date',
 					titleTimeDialogLabel: 'Set Time',
 					daysOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
@@ -152,10 +154,10 @@
 						case 0: this.setFullYear(this.getFullYear() + amount); break;
 						case 1: this.setMonth(this.getMonth() + amount); break;
 						case 2: this.setDate(this.getDate() + amount); break;
-						case 3: this.setHours(this.getHours() + amount); break;
-						case 4: this.setMinutes(this.getMinutes() + amount); break;
-						case 5: this.setSeconds(this.getSeconds() + amount); break;
-						case 6: this.setMilliseconds(this.getMilliseconds() + amount); break;
+						case 3: amount *= 60;
+                        case 4: amount *= 60;
+                        case 5: amount *= 1000;
+                        case 6: this.setTime(this.getTime() + amount); break;
 					}
 					return this;
 				},
@@ -269,10 +271,6 @@
 						$(this).trigger('change');
 				}
 			}
-		},
-		_hoover: function(item) {
-			// Hover toggle class, for calendar
-			$(item).toggleClass('ui-btn-up-'+$(item).jqmData('theme')+' ui-btn-down-'+$(item).jqmData('theme'));
 		},
 		_ord: {
 			'default': function (num) {
@@ -399,7 +397,7 @@
 				} 
 				
 				exp_temp = w.initDate.getEpoch();
-				for ( i=0; i<exp_input.length; i++ ) { //0y 1m 2d 3h 4i 5s
+				for ( i=1; i<exp_input.length; i++ ) { //0y 1m 2d 3h 4i 5s
 					if ( exp_format[i].match(/^%Dd$/i) )   { exp_temp = exp_temp + (parseInt(exp_input[i],10)*60*60*24); }
 					if ( exp_format[i].match(/^%Dl$/i) )   { exp_temp = exp_temp + (parseInt(exp_input[i],10)*60*60); }
 					if ( exp_format[i].match(/^%DM$/i) )   { exp_temp = exp_temp + (parseInt(exp_input[i],10)*60); }
@@ -668,7 +666,6 @@
 			mode = (mode || "").toLowerCase();
 				
 			if ( typeof(update) === "undefined" ) { update = true; }
-			w.d.input.trigger('datebox', {'method':'offset', 'type':mode, 'amount':amount});
 			
 			if ( mode !== 'a' && ( typeof o.rolloverMode[mode] === 'undefined' || o.rolloverMode[mode] === true )) {
 				ok = $.inArray(mode, ['y','m','d','h','i','s']);
@@ -698,6 +695,8 @@
 			if ( ok !== false ) { w.theDate.adj(ok,amount); }
 			if ( update === true ) { w.refresh(); }
 			if ( o.useImmediate ) { w.d.input.trigger('datebox', {'method':'doset'}); }
+			
+			w.d.input.trigger('datebox', {'method':'offset', 'type':mode, 'amount':amount, 'newDate':w.theDate});
 		},
 		_startOffset: function(date) {
 			var o = this.options;
@@ -718,15 +717,19 @@
 			$( document ).trigger( "dateboxcreate" );
 		
 			var w = this,
-				o = $.extend(this.options, (typeof this.element.jqmData('options') !== 'undefined') ? this.element.jqmData('options') : this._getLongOptions(this.element) ),
-				thisTheme = ( o.theme === false && typeof($(this).jqmData('theme')) === 'undefined' ) ?
-					( ( typeof(this.element.parentsUntil(':jqmData(theme)').parent().jqmData('theme')) === 'undefined' ) ?
-						o.themeDefault : this.element.parentsUntil(':jqmData(theme)').parent().jqmData('theme') )
+				o = $.extend(this.options, 
+					(typeof this.element.data('options') !== 'undefined') 
+						? this.element.data('options') 
+						: this._getLongOptions(this.element) ),
+				thisTheme = ( o.theme === false && typeof($(this).data('theme')) === 'undefined' ) ?
+					( ( typeof(this.element.parentsUntil('[data-theme]').parent().data('theme')) === 'undefined' ) 
+						? o.themeDefault 
+						: this.element.parentsUntil('[data-theme]').parent().data('theme') )
 					: o.theme,
 				trans = o.useAnimation ? o.transition : 'none',
 				d = o.useNewStyle === false ? {
 					input: this.element,
-					wrap: this.element.wrap('<div class="ui-input-datebox ui-shadow-inset ui-corner-all '+ (this.element.jqmData("mini") === true ? 'ui-mini ':'') +'ui-body-'+ thisTheme +'"></div>').parent(),
+					wrap: this.element.wrap('<div class="ui-input-datebox ui-shadow-inset ui-corner-all '+ (this.element.data("mini") === true ? 'ui-mini ':'') +'ui-body-'+ thisTheme +'"></div>').parent(),
 					mainWrap: $("<div>", { "class": 'ui-datebox-container ui-overlay-shadow ui-corner-all ui-datebox-hidden '+trans+' ui-body-'+thisTheme} ).css('zIndex', o.zindex),
 					intHTML: false
 				} : {
@@ -780,7 +783,10 @@
 				w.d.open = $('<a href="#" class="ui-input-clear" title="'+this.__('tooltip')+'">'+this.__('tooltip')+'</a>')
 					.on(o.clickEvent, function(e) {
 						e.preventDefault();
-						if ( !w.disabled ) { w.d.input.trigger('datebox', {'method': 'open'}); w.d.wrap.parent().addClass('ui-focus'); w.d.input.parent().removeClass('ui-focus'); }
+						if ( o.useFocus === true ) { w.d.input.focus(); }
+						else {
+							if ( !w.disabled ) { w.d.input.trigger('datebox', {'method': 'open'}); w.d.wrap.parent().addClass('ui-focus'); w.d.input.parent().removeClass('ui-focus'); }
+						}
 						setTimeout( function() { $(e.target).closest('a').removeClass($.mobile.activeBtnClass); }, 300);
 					}).appendTo(w.d.wrap).buttonMarkup({icon: 'grid', iconpos: 'notext', corners:true, shadow:true})
 					.css({'vertical-align': 'middle', 'display': 'inline-block'});
@@ -838,8 +844,9 @@
 					w.theDate = w._makeDate(w.d.input.val());
 					w.refresh();
 				})
-				.attr("readonly", o.lockInput)
 				.on('datebox', w._event);
+				
+			if ( o.lockInput === true ) { w.d.input.attr("readonly", "readonly"); }
 			
 			if ( o.useNewStyle === true ) {
 				w.d.input.addClass('ui-corner-all '+((o.useAltIcon===true)?'ui-icon-datebox-alt':'ui-icon-datebox'));
@@ -910,8 +917,8 @@
 			var w = e.widget,
 				o = e.widget.options,
 				fixd = {
-					h: $.mobile.activePage.find('.ui-header').jqmData('position'),
-					f: $.mobile.activePage.find('.ui-footer').jqmData('position'),
+					h: $.mobile.activePage.find('.ui-header').data('position'),
+					f: $.mobile.activePage.find('.ui-footer').data('position'),
 					fh: $.mobile.activePage.find('.ui-footer').outerHeight(),
 					hh: $.mobile.activePage.find('.ui-header').outerHeight()
 				},
@@ -936,7 +943,7 @@
 				
 			if ( o.centerVert === false ) {
 				if ( o.hideFixedToolbars === true && ( typeof fixd.f !== 'undefined' || typeof fixd.h !== 'undefined' )) {
-					$.mobile.activePage.find(":jqmData(position='fixed')").fixedtoolbar('hide');
+					$.mobile.activePage.find("[data-position='fixed']").fixedtoolbar('hide');
 					fixd.f = undefined;
 					fixd.h = undefined;
 				}
@@ -1015,10 +1022,18 @@
 			
 			if ( ( o.useInline === true || o.useInlineBlind === true ) && w.initDone === false ) {
 				w.d.mainWrap.append(w.d.intHTML);
-				w.d.input.parent().parent().append(w.d.mainWrap);
+				if ( o.useInline === true && o.hideInput === true ) {
+					w.d.input.parent().parent().parent().append(w.d.mainWrap);
+				} else {
+					w.d.input.parent().parent().append(w.d.mainWrap);
+				}
 				w.d.mainWrap.removeClass('ui-datebox-hidden');
 				if ( o.useInline === true ) {
-					w.d.mainWrap.addClass('ui-datebox-inline');
+					if ( o.hideInput === true ) {
+						w.d.mainWrap.addClass('ui-datebox-inline');
+					} else {
+						w.d.mainWrap.addClass('ui-datebox-inlineblind');
+					}
 				} else {
 					w.d.mainWrap.addClass('ui-datebox-inlineblind');
 					w.d.mainWrap.hide();
@@ -1027,13 +1042,13 @@
 				w.d.input.trigger('datebox',{'method':'postrefresh'});
 			}
 			
-			if ( o.useImmediate ) { w.d.input.trigger('datebox', {'method':'doset'}); }
 			if ( o.useInline ) { return true; }
 			if ( o.useInlineBlind ) { 
-				if ( w.initDone ) { w.d.mainWrap.slideDown();  }
+				if ( w.initDone ) { w.refresh(); w.d.mainWrap.slideDown();  }
 				else { w.initDone = true; }
 				return true;
 			}
+			
 			if ( w.d.intHTML.is(':visible') ) { return false; } // Ignore if already open
 				
 			if ( o.enablePopup === true ) {
@@ -1057,8 +1072,8 @@
 				}
 				
 				if ( o.popupForceX !== false && o.popupForceY !== false ) {
-					popopts.x = o.popupForceX;
-					popopts.y = o.popupForceY;
+					popopts.x = parseInt(o.popupForceX,10);
+					popopts.y = parseInt(o.popupForceY,10);
 				}
 				
 				if ( o.popupPosition !== false ) {
@@ -1134,7 +1149,7 @@
 			if ( w.d.dialogPage !== false ) {
 				$(w.d.dialogPage).dialog('close');
 				
-				if ( ! $.mobile.activePage.jqmData('mobile-page').options.domCache ) {
+				if ( ! $.mobile.activePage.data('mobile-page').options.domCache ) {
 					$.mobile.activePage.on('pagehide.remove', function () { $(this).remove(); });
 				}
 				
@@ -1264,18 +1279,23 @@
 				if ( o.blackDays !== false ) {
 					if ( $.inArray(w.theDate.getDay(), o.blackDays) > -1 ) { w.dateOK = false; }
 				}
+				if ( o.whiteDates !== false ) {
+					if ( $.inArray(w.theDate.iso(), o.whiteDates) > -1 ) { w.dateOK = true; }
+				}
 			}
 		},
 		_grabLabel: function() {
 			var w = this,
-				o = this.options;
+				o = this.options,
+				par = {'oldd': false, 'newd': false};
 				
 			if ( typeof o.overrideDialogLabel === 'undefined' ) {
 				if ( typeof w.d.input.attr('placeholder') !== 'undefined' ) { return w.d.input.attr('placeholder'); }
 				if ( typeof w.d.input.attr('title') !== 'undefined' ) { return w.d.input.attr('title'); }
-				if ( w.d.wrap.parent().find('label[for=\''+w.d.input.attr('id')+'\']').text() !== '' ) {
-					return w.d.wrap.parent().find('label[for=\''+w.d.input.attr('id')+'\']').text();
-				}
+				par.newd = w.d.wrap.parent().parent().find('label[for=\''+w.d.input.attr('id')+'\']').text();
+				par.oldd = w.d.wrap.parent().find('label[for=\''+w.d.input.attr('id')+'\']').text();
+				if ( par.oldd !== '' && par.oldd !== false ) { return par.oldd; }
+				if ( par.newd !== '' && par.newd !== false ) { return par.newd; }
 				return false;
 			}
 			return o.overrideDialogLabel;
@@ -1289,7 +1309,7 @@
 			if ( typeof parts.attr !== 'undefined' ) {
 				for ( part in parts.attr ) {
 					if ( parts.attr.hasOwnProperty(part) ) {
-						retty.jqmData(part, parts.attr[part]);
+						retty.data(part, parts.attr[part]);
 					}
 				}
 			}
@@ -1340,24 +1360,32 @@
 		setTheDate: function(newDate) {
 			this.theDate = newDate;
 			this.refresh();
+			this.d.input.trigger('datebox', { 'method': 'doset' });
 		},
 		callFormat: function(format, date) {
 			return this._formatter(format, date);
+		},
+		getOption: function(opt) {
+			var problang = this.__(opt);
+			if ( typeof(problang) !== 'undefined' ) {
+				return problang;
+			} else {
+				return this.options[opt];
+			}
 		}
 	});
 	  
 	// Degrade date inputs to text inputs, suppress standard UI functions.
 	$( document ).on( "pagebeforecreate", function( e ) {
-		$( ":jqmData(role='datebox')", e.target ).each(function() {
+		$( "[data-role='datebox']", e.target ).each(function() {
 			$(this).prop('type', 'text');
 		});
 	});
 	// Automatically bind to data-role='datebox' items.
 	$( document ).on( "pagecreate create", function( e ){
 		$( document ).trigger( "dateboxbeforecreate" );
-		$( ":jqmData(role='datebox')", e.target ).each(function() {
-			var defed = typeof ($(this).data(parseInt($.mobile.version.replace(/\./g,''),10) > 111 ? 'mobile-datebox' : 'datebox'));
-			if ( defed === "undefined" ) {
+		$( "[data-role='datebox']", e.target ).each(function() {
+			if ( typeof $(this).data('mobile-datebox') === "undefined" ) {
 				$(this).datebox();
 			}
 		});
@@ -1370,7 +1398,6 @@
  * https://github.com/jtsage/jquery-mobile-datebox
  */
 /* CALBOX Mode */
-// Version Notes: <140 :: New button theme method, still use _hoover
 
 (function($) {
 	$.extend( $.mobile.datebox.prototype.options, {
@@ -1395,7 +1422,11 @@
 		calUsePickers: false,
 		calNoHeader: false,
 		
+		calYearPickMin: -6,
+		calYearPickMax: 6,
+		
 		useTodayButton: false,
+		useTomorrowButton: false,
 		useCollapsedBut: false,
 		
 		highDays: false,
@@ -1404,7 +1435,7 @@
 		highDatesAlt: false,
 		enableDates: false,
 		calDateList: false,
-		calShowDateList: false,
+		calShowDateList: false
 	});
 	$.extend( $.mobile.datebox.prototype, {
 		_cal_gen: function (start,prev,last,other,month) {
@@ -1477,6 +1508,9 @@
 					ret.ok = false;
 				}
 			}
+
+			if ( $.isArray(o.whiteDates) && $.inArray(ret.iso, o.whiteDates) > -1 ) { ret.ok = true; }
+
 			if ( ret.ok ) {
 				if ( o.highDatesRec !== false ) {
 					for ( i=0; i<o.highDatesRec.length; i++ ) {
@@ -1511,7 +1545,7 @@
 				o = this.options, i,
 				cal = false,
 				uid = 'ui-datebox-',
-				temp = false, row = false, col = false, hRow = false, checked = false;
+				temp = false, row = false, col = false, hRow = false, checked = false, prange = {};
 				
 			if ( typeof w.d.intHTML !== 'boolean' ) {
 				w.d.intHTML.remove();
@@ -1593,12 +1627,42 @@
 				for ( i=0; i<=11; i++ ) {
 					cal.picker1.append($('<option value="'+i+'"'+((cal.thisMonth===i)?' selected="selected"':'')+'>'+w.__('monthsOfYear')[i]+'</option>'));
 				}
-				for ( i=(cal.thisYear-6); i<=cal.thisYear+6; i++ ) {
+				
+				if ( o.calYearPickMin < 1 ) { 
+					prange.sm = cal.thisYear + o.calYearPickMin;
+				} else if ( o.calYearPickMin < 1800 ) {
+					prange.sm = cal.thisYear - o.calYearPickMin;
+				} else if ( o.calYearPickMin === "NOW" ) {
+					prange.sm = cal.thisDate.getFullYear();
+				} else {
+					prange.sm = o.calYearPickMin;
+				}
+				
+				if ( o.calYearPickMax < 1800 ) {
+					prange.lg = cal.thisYear + o.calYearPickMax;
+				} else if ( o.calYearPickMax === "NOW" ) {
+					prange.lg = cal.thisDate.getFullYear();
+				} else {
+					prange.lg = o.calYearPickMax;
+				}
+				for ( i=prange.sm; i<=prange.lg; i++ ) {
 					cal.picker2.append($('<option value="'+i+'"'+((cal.thisYear===i)?' selected="selected"':'')+'>'+i+'</option>'));
 				}
 				
-				cal.picker1.on('change', function () { w.theDate.setMonth($(this).val()); w.refresh(); });
-				cal.picker2.on('change', function () { w.theDate.setFullYear($(this).val()); w.refresh(); });
+				cal.picker1.on('change', function () {
+					w.theDate.setMonth($(this).val());
+					if (w.theDate.getMonth() !== parseInt($(this).val(), 10)) {
+						w.theDate.setDate(0);
+					}
+					w.refresh();
+				});
+				cal.picker2.on('change', function () {
+					w.theDate.setFullYear($(this).val());
+					if (w.theDate.getMonth() !== parseInt(cal.picker1.val(), 10)) {
+						w.theDate.setDate(0);
+					}
+					w.refresh();
+				});
 				
 				cal.picker.find('select').selectmenu({mini:true, nativeMenu: true});
 				cal.picker.appendTo(w.d.intHTML);
@@ -1634,15 +1698,17 @@
 					} else {
 						checked = w._cal_check(cal, cal.theDateArr[0], cal.gen[row][col][1], cal.gen[row][col][0]);
 						if (cal.gen[row][col][0]) {
+							cal.extcss = ( cal.thisMonth !== cal.gen[row][col][1] && !o.calOnlyMonth ) ? {'cursor':'pointer'} : {};
 							$("<div>"+String(cal.gen[row][col][0])+"</div>")
 								.addClass( cal.thisMonth === cal.gen[row][col][1] ?
 									(uid+'griddate ui-corner-all ui-btn ui-btn-'+(o.mobVer<140?'up-':'')+checked.theme + (checked.ok?'':' '+uid+'griddate-disable')):
 									(uid+'griddate '+uid+'griddate-empty')
 								)
-								.jqmData('date', ((o.calWeekMode)?cal.weekMode:cal.gen[row][col][0]))
-								.jqmData('theme', cal.thisMonth === cal.gen[row][col][1] ? checked.theme : '-')
-								.jqmData('enabled', checked.ok)
-								.jqmData('month', cal.gen[row][((o.calWeekMode)?o.calWeekModeDay:col)][1])
+								.css(cal.extcss)
+								.data('date', ((o.calWeekMode)?cal.weekMode:cal.gen[row][col][0]))
+								.data('theme', cal.thisMonth === cal.gen[row][col][1] ? checked.theme : '-')
+								.data('enabled', checked.ok)
+								.data('month', cal.gen[row][((o.calWeekMode)?o.calWeekModeDay:col)][1])
 								.appendTo(hRow);
 						}
 					}
@@ -1673,7 +1739,7 @@
 				cal.datelist.appendTo(w.d.intHTML);
 			}
 			
-			if ( o.useTodayButton || o.useClearButton ) {
+			if ( o.useTodayButton || o.useTomorrowButton || o.useClearButton ) {
 				hRow = $('<div>', {'class':uid+'controls'});
 				
 				if ( o.useTodayButton ) {
@@ -1682,6 +1748,17 @@
 						.on(o.clickEvent, function(e) {
 							e.preventDefault();
 							w.theDate = new w._date();
+							w.theDate = new w._date(w.theDate.getFullYear(), w.theDate.getMonth(), w.theDate.getDate(),0,0,0,0);
+							w.d.input.trigger('datebox',{'method':'doset'});
+						});
+				}
+				if ( o.useTomorrowButton ) {
+					$('<a href="#">'+w.__('calTomorrowButtonLabel')+'</a>')
+						.appendTo(hRow).buttonMarkup({theme: o.theme, icon: 'check', iconpos: 'left', corners:true, shadow:true})
+						.on(o.clickEvent, function(e) {
+							e.preventDefault();
+							w.theDate = new w._date();
+							w.theDate = new w._date(w.theDate.getTime() + 24 * 60 * 60 * 1000); //tomorrow
 							w.theDate = new w._date(w.theDate.getFullYear(), w.theDate.getMonth(), w.theDate.getDate(),0,0,0,0);
 							w.d.input.trigger('datebox',{'method':'doset'});
 						});
@@ -1702,20 +1779,12 @@
 				hRow.appendTo(temp);
 			}
 			
-			w.d.intHTML.on(o.clickEventAlt+' vmouseover vmouseout', 'div.'+uid+'griddate', function(e) {
-				if ( e.type === o.clickEventAlt ) {
-					e.preventDefault();
-					if ( $(this).jqmData('enabled') ) {
-						w.theDate.setD(2,1).setD(1,$(this).jqmData('month')).setD(2,$(this).jqmData('date'));
-						w.d.input.trigger('datebox', {'method':'set', 'value':w._formatter(w.__fmt(),w.theDate), 'date':w.theDate});
-						w.d.input.trigger('datebox', {'method':'close'});
-					}
-				} else {
-					if ( $(this).jqmData('enabled') && typeof $(this).jqmData('theme') !== 'undefined' && o.mobVer < 140 ) {
-						if ( o.calWeekMode !== false && o.calWeekHigh === true ) {
-							$(this).parent().find('div').each(function() { w._hoover(this); });
-						} else { w._hoover(this); }
-					}
+			w.d.intHTML.on(o.clickEventAlt, 'div.'+uid+'griddate', function(e) {
+				e.preventDefault();
+				if ( $(this).data('enabled') ) {
+					w.theDate.setD(2,1).setD(1,$(this).jqmData('month')).setD(2,$(this).data('date'));
+					w.d.input.trigger('datebox', {'method':'set', 'value':w._formatter(w.__fmt(),w.theDate), 'date':w.theDate});
+					w.d.input.trigger('datebox', {'method':'close'});
 				}
 			});
 			w.d.intHTML
@@ -1756,22 +1825,37 @@
 	});
 	$.extend( $.mobile.datebox.prototype, {
 		_dbox_run: function() {
-			var w = this;
+			var w = this,
+				timer = 150;
+				
+			if ( w.drag.cnt > 10 ) { timer = 100; }
+			if ( w.drag.cnt > 30 ) { timer = 50; }
+			if ( w.drag.cnt > 60 ) { timer = 20; }
+			
 			w.drag.didRun = true;
+			w.drag.cnt++;
+			
 			w._offset(w.drag.target[0], w.drag.target[1], false);
 			w._dbox_run_update();
-			w.runButton = setTimeout(function() {w._dbox_run();}, 150);
+			w.runButton = setTimeout(function() {w._dbox_run();}, timer);
 		},
 		_dbox_run_update: function() {
 			var w = this,
 				o = this.options;
+				
+			w._check();
 			
 			if ( o.mode === 'datebox' ) {
 				w.d.intHTML.find('.ui-datebox-header').find('h4').text(w._formatter(w.__('headerFormat'), w.theDate));
 			}
 			
+			if ( o.useSetButton ) {
+				if ( w.dateOK === false ) { setBut.addClass('ui-disabled'); }
+				else { setBut.removeClass('ui-disabled'); }
+			}
+			
 			w.d.divIn.find('input').each(function () {
-				switch ( $(this).jqmData('field') ) {
+				switch ( $(this).data('field') ) {
 					case 'y':
 						$(this).val(w.theDate.getFullYear()); break;
 					case 'm':
@@ -1824,12 +1908,12 @@
 		_dbox_enter: function (item) {
 			var w = this;
 			
-			if ( item.jqmData('field') === 'M' && $.inArray(item.val(), w.__('monthsOfYearShort')) > -1 ) {
+			if ( item.data('field') === 'M' && $.inArray(item.val(), w.__('monthsOfYearShort')) > -1 ) {
 				w.theDate.setMonth($.inArray(item.val(), w.__('monthsOfYearShort')));
 			}
 			
 			if ( item.val() !== '' && item.val().toString().search(/^[0-9]+$/) === 0 ) {
-				switch ( item.jqmData('field') ) {
+				switch ( item.data('field') ) {
 					case 'y':
 						w.theDate.setFullYear(parseInt(item.val(),10)); break;
 					case 'm':
@@ -1925,7 +2009,7 @@
 			}
 			
 			divIn.find('input').each(function () {
-				switch ( $(this).jqmData('field') ) {
+				switch ( $(this).data('field') ) {
 					case 'y':
 						$(this).val(w.theDate.getFullYear()); break;
 					case 'm':
@@ -1963,7 +2047,7 @@
 				y = $('<div>', {'class':uid+'controls'});
 				
 				if ( o.useSetButton ) {
-					$('<a href="#">'+((o.mode==='datebox')?w.__('setDateButtonLabel'):w.__('setTimeButtonLabel'))+'</a>')
+					setBut = $('<a href="#">'+((o.mode==='datebox')?w.__('setDateButtonLabel'):w.__('setTimeButtonLabel'))+'</a>')
 						.appendTo(y).buttonMarkup({theme: o.theme, icon: 'check', iconpos: 'left', corners:true, shadow:true})
 						.on(o.clickEventAlt, function(e) {
 							e.preventDefault();
@@ -1991,14 +2075,16 @@
 			
 			if ( o.repButton === false ) {
 				divPlus.on(o.clickEvent, 'div', function(e) {
+					divIn.find(':focus').blur();
 					e.preventDefault();
 					w._dbox_delta = 1;
-					w._offset($(this).jqmData('field'), $(this).jqmData('amount'));
+					w._offset($(this).data('field'), $(this).data('amount'));
 				});
 				divMinus.on(o.clickEvent, 'div', function(e) {
+					divIn.find(':focus').blur();
 					e.preventDefault();
 					w._dbox_delta = -1;
-					w._offset($(this).jqmData('field'), $(this).jqmData('amount')*-1);
+					w._offset($(this).data('field'), $(this).data('amount')*-1);
 				});
 			}
 			
@@ -2008,14 +2094,16 @@
 				divIn.on('mousewheel', 'input', function(e,d) {
 					e.preventDefault();
 					w._dbox_delta = d<0?-1:1;
-					w._offset($(this).jqmData('field'), ((d<0)?-1:1)*$(this).jqmData('amount'));
+					w._offset($(this).data('field'), ((d<0)?-1:1)*$(this).data('amount'));
 				});
 			}
 			
 			if ( o.repButton === true ) {
 				divPlus.on(w.drag.eStart, 'div', function(e) {
-					tmp = [$(this).jqmData('field'), $(this).jqmData('amount')];
+					divIn.find(':focus').blur();
+					tmp = [$(this).data('field'), $(this).data('amount')];
 					w.drag.move = true;
+					w.drag.cnt = 0;
 					w._dbox_delta = 1;
 					w._offset(tmp[0], tmp[1], false);
 					w._dbox_run_update();
@@ -2026,8 +2114,10 @@
 				});
 				
 				divMinus.on(w.drag.eStart, 'div', function(e) {
-					tmp = [$(this).jqmData('field'), $(this).jqmData('amount')*-1];
+					divIn.find(':focus').blur();
+					tmp = [$(this).data('field'), $(this).data('amount')*-1];
 					w.drag.move = true;
+					w.drag.cnt = 0;
 					w._dbox_delta = -1;
 					w._offset(tmp[0], tmp[1], false);
 					w._dbox_run_update();
@@ -2072,7 +2162,7 @@
 		themeDate: 'a',
 		useSetButton: true,
 		validHours: false,
-		flen: {'y': 15, 'm':12, 'd':15, 'h':12, 'i':15, 'a':3}
+		flen: {'y': 15, 'm':12, 'd':20, 'h':12, 'i':15, 'a':3}
 	});
 	$.extend( $.mobile.datebox.prototype, {
 		'_fbox_pos': function () {
@@ -2085,14 +2175,20 @@
 			w.d.intHTML.find('.ui-datebox-flipcenter').each(function() {
 				ech = $(this);
 				top = ech.innerHeight();
-				ech.css('top', ((par/2)-(top/2)+4)*-1);
+				ech.css('top', ((par/2)-(top/2)-3)*-1);
 			});
 			w.d.intHTML.find('ul').each(function () {
 				ech = $(this);
 				par = ech.parent().innerHeight();
 				top = ech.find('li').first();
 				tot = ech.find('li').size() * top.outerHeight();
-				top.css('marginTop', ((tot/2)-(par/2)+(top.outerHeight()/2))*-1);
+				fixer = ech.find('li').last().offset().top - ech.find('li').first().offset().top;
+				
+				pos1 = (((tot/2)-(par/2)+(top.outerHeight()/2))*-1);
+				
+				if ( fixer > 0 ) { pos1 = ((((fixer-par) / 2) + top.outerHeight()) * -1) }
+				
+				top.css('marginTop', pos1);
 			});
 		}
 	});
@@ -2109,14 +2205,14 @@
 				ctrl = $("<div>", {"class":uid+'flipcontent'});
 			
 			if ( typeof w.d.intHTML !== 'boolean' ) {
-				w.d.intHTML.empty();
+				w.d.intHTML.empty().remove();
+			} else {
+				w.d.input.on('datebox', function (e,p) {
+					if ( p.method === 'postrefresh' ) {
+						w._fbox_pos();
+					}
+				});
 			}
-			
-			w.d.input.on('datebox', function (e,p) {
-				if ( p.method === 'postrefresh' ) {
-					w._fbox_pos();
-				}
-			});
 			
 			w.d.headerText = ((w._grabLabel() !== false)?w._grabLabel():((o.mode==='flipbox')?w.__('titleDateDialogLabel'):w.__('titleTimeDialogLabel')));
 			w.d.intHTML = $('<span>')
@@ -2247,7 +2343,7 @@
 			if ( w.wheelExists ) { // Mousewheel operation, if plugin is loaded
 				w.d.intHTML.on('mousewheel', '.ui-overlay-shadow', function(e,d) {
 					e.preventDefault();
-					w._offset($(this).jqmData('field'), ((d<0)?-1:1)*$(this).jqmData('amount'));
+					w._offset($(this).data('field'), ((d<0)?-1:1)*$(this).data('amount'));
 				});
 			}
 			
@@ -2299,7 +2395,7 @@
 						e.preventDefault();
 						e.stopPropagation();
 						g.tmp = g.target.parent().parent();
-						w._offset(g.tmp.jqmData('field'), (parseInt((g.start - g.end) / g.target.innerHeight(),10) * g.tmp.jqmData('amount')));
+						w._offset(g.tmp.data('field'), (parseInt((g.start - g.end) / g.target.innerHeight(),10) * g.tmp.data('amount')));
 					}
 					g.start = false;
 					g.end = false;
@@ -2326,11 +2422,20 @@
 	});
 	$.extend( $.mobile.datebox.prototype, {
 		_durbox_run: function() {
-			var w = this;
+			var w = this,
+				timer = 150;
+				
+			if ( w.drag.cnt > 10 ) { timer = 100; }
+			if ( w.drag.cnt > 30 ) { timer = 50; }
+			if ( w.drag.cnt > 60 ) { timer = 20; }
+			if ( w.drag.cnt > 120 ) { timer = 10; }
+			if ( w.drag.cnt > 240 ) { timer = 3; }
+			
+			w.drag.cnt++;
 			w.drag.didRun = true;
 			w._offset(w.drag.target[0], w.drag.target[1], false);
 			w._durbox_run_update();
-			w.runButton = setTimeout(function() {w._durbox_run();}, 100);
+			w.runButton = setTimeout(function() {w._durbox_run();}, timer);
 		},
 		_durbox_run_update: function () {
 			var w = this, i, cDur = [],
@@ -2349,7 +2454,7 @@
 			cDur[3] = i % ival.i;
 
 			w.d.divIn.find('input').each(function () {
-				switch ( $(this).parent().jqmData('field') ) {
+				switch ( $(this).parent().data('field') ) {
 					case 'd':
 						$(this).val(cDur[0]); break;
 					case 'h':
@@ -2370,7 +2475,7 @@
 				t = w.initDate.getEpoch();
 				
 			w.d.intHTML.find('input').each( function() {
-				switch ( $(this).parent().jqmData('field') ) {
+				switch ( $(this).parent().data('field') ) {
 					case 'd':
 						t += (60*60*24) * w._durbox_valid($(this).val()); break;
 					case 'h':
@@ -2405,7 +2510,7 @@
 				w.d.intHTML.empty().remove();
 			}
 			
-			w.d.headerText = ((w._grabLabel() !== false)?w._grabLabel():w.__('titleDateDialogLabel'));
+			w.d.headerText = ((w._grabLabel() !== false)?w._grabLabel():w.__('titleTimeDialogLabel'));
 			w.d.intHTML = $('<span>');
 			
 			if ( w.inputType !== 'number' ) { inBase.attr('pattern', '[0-9]*'); }
@@ -2419,7 +2524,7 @@
 					case 'i':
 					case 's':
 						y = $.inArray(w.fldOrder[i], ['d','h','i','s']);
-						$('<div>').jqmData('field', w.fldOrder[i]).addClass('ui-block-'+['a','b','c','d'][i]).append(inBase.clone()).appendTo(divIn).prepend('<label>'+w.__('durationLabel')[y]+'</label>');
+						$('<div>').data('field', w.fldOrder[i]).addClass('ui-block-'+['a','b','c','d'][i]).append(inBase.clone()).appendTo(divIn).prepend('<label>'+w.__('durationLabel')[y]+'</label>');
 						w._makeEl(butBase, {'attr': {'field':w.fldOrder[i]}}).addClass('ui-block-'+['a','b','c','d'][i]).buttonMarkup(butPTheme).appendTo(divPlus);
 						w._makeEl(butBase, {'attr': {'field':w.fldOrder[i]}}).addClass('ui-block-'+['a','b','c','d'][i]).buttonMarkup(butMTheme).appendTo(divMinus);
 						break;
@@ -2439,7 +2544,7 @@
 			cDur[3] = i % ival.i;
 			
 			divIn.find('input').each(function () {
-				switch ( $(this).parent().jqmData('field') ) {
+				switch ( $(this).parent().data('field') ) {
 					case 'd':
 						$(this).val(cDur[0]); break;
 					case 'h':
@@ -2492,12 +2597,14 @@
 			
 			if ( o.repButton === false ) {
 				divPlus.on(o.clickEvent, 'div', function(e) {
+					divIn.find(':focus').blur();
 					e.preventDefault();
-					w._offset($(this).jqmData('field'), o.durationSteppers[$(this).jqmData('field')]);
+					w._offset($(this).data('field'), o.durationSteppers[$(this).data('field')]);
 				});
 				divMinus.on(o.clickEvent, 'div', function(e) {
+					divIn.find(':focus').blur();
 					e.preventDefault();
-					w._offset($(this).jqmData('field'), o.durationSteppers[$(this).jqmData('field')]*-1);
+					w._offset($(this).data('field'), o.durationSteppers[$(this).data('field')]*-1);
 				});
 			}
 			
@@ -2506,13 +2613,15 @@
 			if ( w.wheelExists ) { // Mousewheel operation, if plugin is loaded
 				divIn.on('mousewheel', 'input', function(e,d) {
 					e.preventDefault();
-					w._offset($(this).parent().jqmData('field'), ((d<0)?-1:1)*o.durationSteppers[$(this).parent().jqmData('field')]);
+					w._offset($(this).parent().data('field'), ((d<0)?-1:1)*o.durationSteppers[$(this).parent().data('field')]);
 				});
 			}
 			
 			if ( o.repButton === true ) {
 				divPlus.on(w.drag.eStart, 'div', function(e) {
-					tmp = [$(this).jqmData('field'), o.durationSteppers[$(this).jqmData('field')]];
+					divIn.find(':focus').blur();
+					tmp = [$(this).data('field'), o.durationSteppers[$(this).data('field')]];
+					w.drag.cnt = 0;
 					w.drag.move = true;
 					w._dbox_delta = 1;
 					w._offset(tmp[0], tmp[1], false);
@@ -2524,8 +2633,10 @@
 				});
 				
 				divMinus.on(w.drag.eStart, 'div', function(e) {
-					tmp = [$(this).jqmData('field'), o.durationSteppers[$(this).jqmData('field')]*-1];
+					divIn.find(':focus').blur();
+					tmp = [$(this).data('field'), o.durationSteppers[$(this).data('field')]*-1];
 					w.drag.move = true;
+					w.drag.cnt = 0;
 					w._dbox_delta = -1;
 					w._offset(tmp[0], tmp[1], false);
 					w._durbox_run_update();
@@ -2579,14 +2690,21 @@
 			
 			w.d.intHTML.find('div.ui-datebox-sliderow-int').each(function () {
 				ech = $(this);
-				par = ech.parent().innerWidth();
+				par = ech.parent().outerWidth();
+				
 				if ( w.__('isRTL') ) { 
 					top = ech.find('div').last(); 
 				} else {
 					top = ech.find('div').first();
 				}
+				
 				tot = ech.find('div').size() * top.outerWidth();
-				top.css('marginLeft', ((tot/2)-(par/2))*-1);
+				
+				fixer = ech.outerWidth();
+				
+				if ( fixer > 0 ) { tot = fixer; }
+				
+				top.css('marginLeft', (tot-par)/2*-1);
 			});
 		}
 	});
@@ -2602,12 +2720,13 @@
 				ctrl = $("<div>", {"class":uid+'slide'});
 			
 			if ( typeof w.d.intHTML !== 'boolean' ) {
-				w.d.intHTML.empty().remove()
+				console.log('a');
+				w.d.intHTML.remove().empty();
+			} else {
+				w.d.input.on('datebox', function (e,p) {
+					if ( p.method === 'postrefresh' ) { w._sbox_pos(); }
+				});
 			}
-			
-			w.d.input.on('datebox', function (e,p) {
-				if ( p.method === 'postrefresh' ) { w._sbox_pos(); }
-			});
 			
 			w.d.headerText = ((w._grabLabel() !== false)?w._grabLabel():w.__('titleDateDialogLabel'));
 			w.d.intHTML = $('<span>')
@@ -2621,8 +2740,8 @@
 			w.d.intHTML.append(ctrl);
 			
 			for ( y=0; y<w.fldOrder.length; y++ ) {
-				phRow = phBase.clone().jqmData('rowtype', w.fldOrder[y]);
-				hRow = slideBase.clone().jqmData('rowtype', w.fldOrder[y]).appendTo(phRow);
+				phRow = phBase.clone().data('rowtype', w.fldOrder[y]);
+				hRow = slideBase.clone().data('rowtype', w.fldOrder[y]).appendTo(phRow);
 				if ( w.__('isRTL') === true ) { hRow.css('direction', 'rtl'); }
 				
 				switch (w.fldOrder[y]) {
@@ -2630,8 +2749,8 @@
 						phRow.addClass(uid+'sliderow-ym');
 						for ( i=o.slen.y*-1; i<(o.slen.y+1); i++ ) {
 							tmp = (i!==0)?((iDate.get(0) === (w.theDate.get(0) + i))?o.themeDateHigh:o.themeDate):o.themeDatePick;
-							$('<div>', {'class':uid+'slideyear ui-corner-all ui-btn ui-btn-'+thMod+tmp})
-								.html(w.theDate.get(0)+i).jqmData('offset', i).jqmData('theme', tmp).appendTo(hRow);
+							$('<div>', {'class':uid+'slideyear ui-btn ui-btn-'+thMod+tmp})
+								.html(w.theDate.get(0)+i).data('offset', i).data('theme', tmp).appendTo(hRow);
 						}
 						break;
 					case 'm':
@@ -2640,10 +2759,10 @@
 							testDate = w.theDate.copy([0],[0,0,1]);
 							testDate.adj(1,i);
 							tmp = (i!==0)?((iDate.get(1) === testDate.get(1) && iDate.get(0) === testDate.get(0))?o.themeDateHigh:o.themeDate):o.themeDatePick;
-							$('<div>', {'class':uid+'slidemonth ui-corner-all ui-btn ui-btn-'+thMod+tmp})
+							$('<div>', {'class':uid+'slidemonth ui-btn ui-btn-'+thMod+tmp})
 								.html(String(w.__('monthsOfYearShort')[testDate.get(1)]))
-								.jqmData('offset', i)
-								.jqmData('theme', tmp).appendTo(hRow);
+								.data('offset', i)
+								.data('theme', tmp).appendTo(hRow);
 						}
 						break;
 						
@@ -2657,9 +2776,9 @@
 								( o.blackDays !== false && $.inArray(testDate.getDay(), o.blackDays) > -1 ) ) {
 								tmp += ' '+uid+'griddate-disable';
 							}
-							$('<div>', {'class':uid+'slideday ui-corner-all ui-btn ui-btn-'+thMod+tmp})
+							$('<div>', {'class':uid+'slideday ui-btn ui-btn-'+thMod+tmp})
 								.html(testDate.get(2) + '<br /><span class="'+uid+'slidewday">' + w.__('daysOfWeekShort')[testDate.getDay()] + '</span>')
-								.jqmData('offset', i).jqmData('theme', tmp).appendTo(hRow);
+								.data('offset', i).data('theme', tmp).appendTo(hRow);
 						}
 						break;
 					case 'h':
@@ -2671,9 +2790,9 @@
 							if ( o.validHours !== false && $.inArray(testDate.get(3), o.validHours) < 0 ) {
 								tmp += ' '+uid+'griddate-disable';
 							}
-							$('<div>', {'class':uid+'slidehour ui-corner-all ui-btn ui-btn-'+thMod+tmp})
+							$('<div>', {'class':uid+'slidehour ui-btn ui-btn-'+thMod+tmp})
 								.html( w.__('timeFormat') === 12 ? w._formatter('%I<span class="'+uid+'slidewday">%p</span>', testDate) : testDate.get(3) )
-								.jqmData('offset', i).jqmData('theme', tmp).appendTo(hRow);
+								.data('offset', i).data('theme', tmp).appendTo(hRow);
 						}
 						break;
 					case 'i':
@@ -2682,8 +2801,8 @@
 							testDate = w.theDate.copy();
 							testDate.adj(4,(i*o.minuteStep));
 							tmp = (i!==0)?o.themeDate:o.themeDatePick;
-							$('<div>', {'class':uid+'slidemins ui-corner-all ui-btn ui-btn-'+thMod+tmp})
-								.html(w._zPad(testDate.get(4))).jqmData('offset', i*o.minuteStep).jqmData('theme', tmp).appendTo(hRow);
+							$('<div>', {'class':uid+'slidemins ui-btn ui-btn-'+thMod+tmp})
+								.html(w._zPad(testDate.get(4))).data('offset', i*o.minuteStep).data('theme', tmp).appendTo(hRow);
 						}
 						break;
 				}
@@ -2723,16 +2842,13 @@
 			if ( w.wheelExists ) { // Mousewheel operation, if plugin is loaded
 				w.d.intHTML.on('mousewheel', '.ui-datebox-sliderow-int', function(e,d) {
 					e.preventDefault();
-					w._offset($(this).jqmData('rowtype'), ((d<0)?-1:1)*($(this).jqmData('rowtype')==='i'?o.minuteStep:1));
+					w._offset($(this).data('rowtype'), ((d<0)?-1:1)*($(this).data('rowtype')==='i'?o.minuteStep:1));
 				});
 			}
 			
 			w.d.intHTML.on(o.clickEvent, '.ui-datebox-sliderow-int>div', function(e) {
 				e.preventDefault();
-				w._offset($(this).parent().jqmData('rowtype'), parseInt($(this).jqmData('offset'),10));
-			});
-			w.d.intHTML.on('vmouseover vmouseout', '.ui-datebox-sliderow-int>div', function() {
-				w._hoover(this);
+				w._offset($(this).parent().data('rowtype'), parseInt($(this).data('offset'),10));
 			});
 			
 			w.d.intHTML.on(w.drag.eStart, '.ui-datebox-sliderow-int', function(e) {
@@ -2771,7 +2887,7 @@
 						e.preventDefault();
 						e.stopPropagation();
 						g.tmp = g.target.find('div').first();
-						w._offset(g.target.jqmData('rowtype'), ( w.__('isRTL') ? -1 : 1 )*(parseInt((g.start - g.end) / g.tmp.innerWidth(),10))*(g.target.jqmData('rowtype')==='i'?o.minuteStep:1));
+						w._offset(g.target.data('rowtype'), ( w.__('isRTL') ? -1 : 1 )*(parseInt((g.start - g.end) / g.tmp.innerWidth(),10))*(g.target.data('rowtype')==='i'?o.minuteStep:1));
 					}
 					g.start = false;
 					g.end = false;

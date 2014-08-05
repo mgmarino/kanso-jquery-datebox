@@ -11,7 +11,7 @@ import re
 import os
 
 base_url = "http://dev.jtsage.com/cdn/datebox"
-version = "1.4.0"
+version = "1.4.3"
 module_name = "jquery-mobile-datebox"
 json_file = """
 {
