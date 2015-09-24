@@ -5,13 +5,21 @@ number and rerun.
 M. Marino Apr 2014
 """
 
-import urllib2 
+import requests 
 import sys
 import re
 import os
+import logging
+# You must initialize logging, otherwise you'll not see debug output.
+logging.basicConfig() 
+logging.getLogger().setLevel(logging.DEBUG)
+requests_log = logging.getLogger("requests.packages.urllib3")
+requests_log.setLevel(logging.DEBUG)
+requests_log.propagate = True
 
-base_url = "http://dev.jtsage.com/cdn/datebox"
-version = "1.4.3"
+version = "1.4.5"
+base_url = "http://dev.jtsage.com/jQM-DateBox/builder/make.php"
+cdn_url = "http://cdn.jtsage.com/datebox/{version}/jqm-datebox-{version}.css".format(version=version)
 module_name = "jquery-mobile-datebox"
 json_file = """
 {
@@ -45,39 +53,25 @@ components = [
   "calbox",
   "datebox",
   "flipbox",
-  "durationbox",
   "slidebox",
+  "durationbox",
+  "durationflipbox",
+  "customflip",
 ]
   
-total_url = "%(BASE)s/%(VERSION)s/jqm-datebox-%(VERSION)s" % { "BASE" : base_url, "VERSION" : version }
+payload = {
+  "langs" : ["en"],
+  "ver" : version, 
+  "amd" : "no", 
+}
 
-core_data = "" 
-total_components = ["core"]
-total_components.extend(["mode." + k for k in components])
-for comp in total_components: 
-    t = total_url + ".%s.js" % comp
-    try:
-        dat = urllib2.urlopen(t)
-        core_data += dat.read().replace('( jQuery )', '( require("jquery") )') 
-    except urllib2.URLError, e:
-        print e, t
-        print "Exiting..."
-        sys.exit(1)
+payload.update(dict([("comp-" + k, "true") for k in components]))
 
-css = urllib2.urlopen(total_url + ".css").read()
-comp = re.compile("""url\(['"](.*)['"]\)""")
-match = comp.search(css)
-
-total_url = "%(BASE)s/%(VERSION)s/" % { "BASE" : base_url, "VERSION" : version }
-if match:
-    for g in match.groups():
-        print g
-        dat = urllib2.urlopen(total_url + g).read()
-        adir = os.path.dirname(g)
-        if not os.path.exists(adir):
-            os.makedirs(adir)
-        open(g, "w").write(dat)
-        
+core_data = requests.post(base_url, data=payload).text
+core_data = core_data.replace('( jQuery )', '( require("jquery") )') 
+#core_data = requests.post("http://httpbin.org/post", data=payload).text
+css = requests.get(cdn_url).text
+       
 open(module_name + ".js", "w").write(core_data)
 open(module_name + ".css", "w").write(css)
 open("kanso.json", "w").write(json_file)
